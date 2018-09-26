@@ -16,29 +16,33 @@
 package me.theofrancisco.android.bookstore;
 
 import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
+
 import me.theofrancisco.android.bookstore.data.DataContract.DataEntry;
-import me.theofrancisco.android.bookstore.data.MyDbHelper;
+
+import static me.theofrancisco.android.bookstore.data.MyDbHelper.LOG_TAG;
 
 /**
  * Allows user to create a new pet or edit an existing one.
  */
 public class EditorActivity extends AppCompatActivity {
 
-    /** EditText field to enter the item description */
+    /**
+     * EditText field to enter the item description
+     */
     private EditText etName;
     private EditText etPrice;
     private EditText etQuantity;
     private EditText etSupplier;
     private EditText etSupplierPH;
-
 
 
     @Override
@@ -60,40 +64,47 @@ public class EditorActivity extends AppCompatActivity {
     private void insertItem() {
         // Read from input fields
         // Use trim to eliminate leading or trailing white space
-        String name = etName.getText().toString().trim();
-        String priceStr = etPrice.getText().toString().trim();
-        String quantityStr = etQuantity.getText().toString().trim();
-        String supplier = etSupplier.getText().toString().trim();
-        String supplierPH = etSupplierPH.getText().toString().trim();
+        Uri uri = null;
+        try {
+            String name = etName.getText().toString().trim();
+            String priceStr = etPrice.getText().toString().trim();
+            String quantityStr = etQuantity.getText().toString().trim();
+            String supplier = etSupplier.getText().toString().trim();
+            String supplierPH = etSupplierPH.getText().toString().trim();
 
-        int quantity = Integer.valueOf(quantityStr);
-        float price = Float.valueOf(priceStr);
+            int quantity = Integer.valueOf(quantityStr);
+            float price = Float.valueOf(priceStr);
 
-        // Create database helper
-        MyDbHelper mDbHelper = new MyDbHelper(this);
+            /**
+             *  @link https://developer.android.com/reference/android/content/ContentValues
+             */
+            // Create a ContentValues object where column names are the keys,
+            // and pet attributes from the editor are the values.
+            ContentValues values = new ContentValues();
+            values.put(DataEntry.COLUMN_DATA_NAME, name);
+            values.put(DataEntry.COLUMN_DATA_PRICE, price);
+            values.put(DataEntry.COLUMN_DATA_QUANTITY, quantity);
+            values.put(DataEntry.COLUMN_DATA_SUPPLIER, supplier);
+            values.put(DataEntry.COLUMN_DATA_SUPPLIER_PH, supplierPH);
 
-        // Gets the database in write mode
-        SQLiteDatabase db = mDbHelper.getWritableDatabase();
+            // Insert a new row in the database, returning the content uri of that new row.
+            uri = getContentResolver().insert(DataEntry.CONTENT_URI, values);
 
-        // Create a ContentValues object where column names are the keys,
-        // and pet attributes from the editor are the values.
-        ContentValues values = new ContentValues();
-        values.put(DataEntry.COLUMN_DATA_NAME, name);
-        values.put(DataEntry.COLUMN_DATA_PRICE,price);
-        values.put(DataEntry.COLUMN_DATA_QUANTITY,quantity);
-        values.put(DataEntry.COLUMN_DATA_SUPPLIER, supplier);
-        values.put(DataEntry.COLUMN_DATA_SUPPLIER_PH,supplierPH);
-
-        // Insert a new row for pet in the database, returning the ID of that new row.
-        long newRowId = db.insert(DataEntry.TABLE_NAME, null, values);
-
-        // Show a toast message depending on whether or not the insertion was successful
-        if (newRowId == -1) {
-            // If the row ID is -1, then there was an error with insertion.
-            Toast.makeText(this, "Error with saving item", Toast.LENGTH_SHORT).show();
-        } else {
-            // Otherwise, the insertion was successful and we can display a toast with the row ID.
-            Toast.makeText(this, "Item saved with row id: " + newRowId, Toast.LENGTH_SHORT).show();
+            // Show a toast message depending on whether or not the insertion was successful
+            if (uri == null) {
+                Toast.makeText(this, getString(R.string.editor_insert_pet_failed),
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                // Otherwise, the insertion was successful and we can display a toast.
+                Toast.makeText(this, getString(R.string.editor_insert_pet_successful),
+                        Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, e.getMessage() + "/n" + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+            Log.e(LOG_TAG, getString(R.string.failed_to_insert_row));
+            if (uri != null) Log.e(LOG_TAG, uri.toString());
+            else
+                Log.e(LOG_TAG, getString(R.string.uri_is_null));
         }
     }
 

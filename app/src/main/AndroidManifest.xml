@@ -30,6 +30,12 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="me.theofrancisco.android.bookstore.CatalogActivity" />
         </activity>
+
+        <provider
+            android:name=".data.MyProvider"
+            android:authorities="me.theofrancisco.android.bookstore"
+            android:exported="false" />
+
     </application>
 
 </manifest>

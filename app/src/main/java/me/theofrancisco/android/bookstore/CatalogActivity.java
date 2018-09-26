@@ -3,7 +3,7 @@ package me.theofrancisco.android.bookstore;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -11,19 +11,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+
 import me.theofrancisco.android.bookstore.data.DataContract.DataEntry;
-import me.theofrancisco.android.bookstore.data.MyDbHelper;
 
 /**
  * Displays list of pets that were entered and stored in the app.
  */
 public class CatalogActivity extends AppCompatActivity {
-
-
-    /**
-     * Database helper that will provide us access to the database
-     */
-    private MyDbHelper myDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,10 +33,6 @@ public class CatalogActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
-        // To access our database, we instantiate our subclass of SQLiteOpenHelper
-        // and pass the context, which is the current activity.
-        myDbHelper = new MyDbHelper(this);
     }
 
     @Override
@@ -56,44 +46,45 @@ public class CatalogActivity extends AppCompatActivity {
      * the pets database.
      */
     private void displayDatabaseInfo() {
-        Cursor cursor = null;
+        String state = "";
+        TextView displayView = findViewById(R.id.text_view_pet);
         StringBuilder records = new StringBuilder();
-        try {
-            // Create and/or open a database to read from it
-            SQLiteDatabase db = myDbHelper.getReadableDatabase();
+        //Projection
+        String[] projection = {
+                DataEntry._ID,
+                DataEntry.COLUMN_DATA_NAME,
+                DataEntry.COLUMN_DATA_PRICE,
+                DataEntry.COLUMN_DATA_QUANTITY,
+                DataEntry.COLUMN_DATA_SUPPLIER,
+                DataEntry.COLUMN_DATA_SUPPLIER_PH};
 
-            //Projection
-            String[] projection = {
-                    DataEntry._ID,
-                    DataEntry.COLUMN_DATA_NAME,
-                    DataEntry.COLUMN_DATA_PRICE,
-                    DataEntry.COLUMN_DATA_QUANTITY,
-                    DataEntry.COLUMN_DATA_SUPPLIER,
-                    DataEntry.COLUMN_DATA_SUPPLIER_PH
-            };
+        try (Cursor cursor = getContentResolver().query(DataEntry.CONTENT_URI,
+                projection,
+                null,
+                null,
+                null)) {
 
-            cursor = db.query(DataEntry.TABLE_NAME,
-                    projection,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null);
+            if (cursor == null) {
+                displayView.setText("Error: cursor is null for : " + DataEntry.CONTENT_URI);
+                return;
+            }
 
             // Figure out the index of each column
-            int idColumnIndex = cursor.getColumnIndex(DataEntry._ID);
+            //int idColumnIndex = cursor.getColumnIndex(DataEntry._ID);
+            state = "/n1: " + DataEntry.COLUMN_DATA_NAME + " /n";
             int nameColumnIndex = cursor.getColumnIndex(DataEntry.COLUMN_DATA_NAME);
+            state = "/n2/n";
             int priceColumnIndex = cursor.getColumnIndex(DataEntry.COLUMN_DATA_PRICE);
             int quantityColumnIndex = cursor.getColumnIndex(DataEntry.COLUMN_DATA_QUANTITY);
             int supplierColumnIndex = cursor.getColumnIndex(DataEntry.COLUMN_DATA_SUPPLIER);
             int supplier_phColumnIndex = cursor.getColumnIndex(DataEntry.COLUMN_DATA_SUPPLIER_PH);
 
-            records.append("items count: ").append( cursor.getCount() ).append("\n");
+            records.append("items count: ").append(cursor.getCount()).append("\n");
             records.append("id Item Description Unit \tQuantity \tbuy \tsell\n\n");
             if (cursor.getCount() > 0) {
                 cursor.moveToFirst();
                 for (int i = 0; i < cursor.getCount(); i++) {
-                    int id = cursor.getInt(idColumnIndex);
+                    //int id = cursor.getInt(idColumnIndex);
                     String name = cursor.getString(nameColumnIndex);
                     float price = cursor.getInt(priceColumnIndex);
                     float quantity = cursor.getFloat(quantityColumnIndex);
@@ -110,17 +101,12 @@ public class CatalogActivity extends AppCompatActivity {
             } else {
                 records.append("no records found!");
             }
-
         } catch (Exception e) {
-            records.append("Error: " ).append(e.getMessage());
-        } finally {
-            // Always close the cursor when you're done reading from it. This releases all its
-            // resources and makes it invalid.
-            if (cursor != null) cursor.close();
+            records.append("Error: " + state).append(e.getMessage());
         }
         // Display the number of rows in the Cursor (which reflects the number of rows in the
         // pets table in the database).
-        TextView displayView = findViewById(R.id.text_view_pet);
+
         //displayView.setText("Number of rows in pets database table: " + c.getCount());
         displayView.setText(records.toString());
     }
@@ -129,18 +115,16 @@ public class CatalogActivity extends AppCompatActivity {
      * Helper method to insert hardcoded pet data into the database. For debugging purposes only.
      */
     private void insertDummyData() {
-        // Gets the database in write mode
-        SQLiteDatabase db = myDbHelper.getWritableDatabase();
-
         ContentValues values = new ContentValues();
         values.put(DataEntry.COLUMN_DATA_NAME, "The Engineer's Guide to Fashion");
         values.put(DataEntry.COLUMN_DATA_PRICE, 10);
         values.put(DataEntry.COLUMN_DATA_QUANTITY, 2);
         values.put(DataEntry.COLUMN_DATA_SUPPLIER, "Fazlur Rahman Khan");
         values.put(DataEntry.COLUMN_DATA_SUPPLIER_PH, "(605) 475 6959");
-
-        // Insert a new row for item in the database, returning the ID of that new row.
-       db.insert(DataEntry.TABLE_NAME, null, values);
+        // Use the {@link DataEntry#CONTENT_URI} to indicate that we want to insert
+        // into the database table.
+        // Receive the new content URI that will allow us to access Toto's data in the future.
+        Uri newUri = getContentResolver().insert(DataEntry.CONTENT_URI, values);
 
         values = new ContentValues();
         values.put(DataEntry.COLUMN_DATA_NAME, "Everything Men Know About Women");
@@ -148,11 +132,7 @@ public class CatalogActivity extends AppCompatActivity {
         values.put(DataEntry.COLUMN_DATA_QUANTITY, 8);
         values.put(DataEntry.COLUMN_DATA_SUPPLIER, "Ricky Martin");
         values.put(DataEntry.COLUMN_DATA_SUPPLIER_PH, "(951) 262 3062");
-
-        // Insert a new row for item in the database, returning the ID of that new row.
-        db.insert(DataEntry.TABLE_NAME, null, values);
-
-
+        newUri = getContentResolver().insert(DataEntry.CONTENT_URI, values);
     }
 
     @Override
