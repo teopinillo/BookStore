@@ -3,6 +3,7 @@ package me.theofrancisco.android.bookstore.data;
 /**
  * {@link https://developer.android.com/guide/topics/providers/content-provider-creating#ContentURI}
  */
+//Is this class where all data changes for the database are triggered.
 
 import android.content.ContentProvider;
 import android.content.ContentUris;
@@ -14,6 +15,7 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import static me.theofrancisco.android.bookstore.data.DataContract.DataEntry;
 import static me.theofrancisco.android.bookstore.data.MyDbHelper.LOG_TAG;
     /*
     USE URI MATCHER IN CONTENT PROVIDER
@@ -90,7 +92,7 @@ public class MyProvider extends ContentProvider {
         int match = uriMatcher.match(uri);
         switch (match) {
             case BOOKS:
-                //TODO: Perform database query on pets table
+                //Perform database query on pets table
                 cursor = sqLiteDatabase.query(DataContract.DataEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             case BOOK_ID:
@@ -98,7 +100,12 @@ public class MyProvider extends ContentProvider {
                 //array of strings to be substituted wherever there was question mark
                 //up in the selection String
                 selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
-                cursor = sqLiteDatabase.query(DataContract.DataEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                cursor = sqLiteDatabase.query(DataContract.DataEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null, sortOrder);
                 //Example imputs to query() method
                 //URI: content://com.example.android.pets/pets/5
                 //Projection: {"_id","name}
@@ -107,6 +114,12 @@ public class MyProvider extends ContentProvider {
             default:
                 throw new IllegalArgumentException("Unknown URI " + uri);
         }
+
+        //Set the notification URI on the cursor,
+        //so we know what content URI the Cursor was created for.
+        //If the data at this URI changes, then we know we need to update the Cursor
+        //tutorial:https://www.grokkingandroid.com/android-tutorial-writing-your-own-content-provider/
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
         return cursor;
     }
 
@@ -135,7 +148,7 @@ public class MyProvider extends ContentProvider {
         }
     }
 
-    //this methos is a helper method for insert
+    //this method is a helper method for insert
     private Uri insertData(Uri uri, ContentValues values) {
         SQLiteDatabase sqliteDatabase = myDbHelper.getWritableDatabase();
 
@@ -146,6 +159,9 @@ public class MyProvider extends ContentProvider {
             Log.e(LOG_TAG, "Failed to insert row for " + uri);
             return null;
         }
+
+        //Notify all listeners that the data has changed for the pet content URI
+        getContext().getContentResolver().notifyChange(uri, null);
         // Return the new URI with the ID (of the newly inserted row) appended at the end
         return ContentUris.withAppendedId(uri, id);
     }
@@ -155,7 +171,50 @@ public class MyProvider extends ContentProvider {
      */
     @Override
     public int update(@NonNull Uri uri, ContentValues contentValues, String selection, String[] selectionArgs) {
-        return 0;
+        final int match = uriMatcher.match(uri);
+        switch (match) {
+            case BOOKS:
+                return updateItem(uri, contentValues, selection, selectionArgs);
+            case BOOK_ID:
+                // For the BOOK_ID code, extract out the ID from the URI,
+                // so we know which row to update. Selection will be "_id=?" and selection
+                // arguments will be a String array containing the actual ID.
+                selection = DataContract.DataEntry._ID + "=?";
+                selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
+                return updateItem(uri, contentValues, selection, selectionArgs);
+            default:
+                throw new IllegalArgumentException("Update is not supported for " + uri);
+        }
+    }
+
+    /**
+     * Update an item in the database with the given content values. Apply the changes to the rows
+     * specified in the selection and selection arguments (which could be 0 or 1 or more items).
+     * Return the number of rows that were successfully updated.
+     */
+    private int updateItem(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+        // If the {@link DataEntry#COLUMN_DATA_NAME} key is present,
+        // check that the name value is not null.
+        if (values.containsKey(DataContract.DataEntry.COLUMN_DATA_NAME)) {
+            String name = values.getAsString(DataContract.DataEntry.COLUMN_DATA_NAME);
+            if (name == null) {
+                throw new IllegalArgumentException("Pet requires a name");
+            }
+        }
+        // If there are no values to update, then don't try to update the database
+        if (values.size() == 0) {
+            return 0;
+        }
+
+        // Otherwise, get writeable database to update the data
+        SQLiteDatabase database = myDbHelper.getWritableDatabase();
+
+        // Returns the number of database rows affected by the update statement
+        int rowsUpdated = database.update(DataContract.DataEntry.TABLE_NAME, values, selection, selectionArgs);
+        if (rowsUpdated>0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+        return rowsUpdated;
     }
 
     /**
@@ -163,15 +222,50 @@ public class MyProvider extends ContentProvider {
      */
     @Override
     public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
-        return 0;
+        final int match = uriMatcher.match(uri);
+        // Track the number of rows that were deleted
+        int rowsDeleted;
+        SQLiteDatabase database = myDbHelper.getWritableDatabase();
+        switch (match) {
+            case BOOKS:
+                //Delete all rows that match the selection and selection args
+                rowsDeleted = database.delete(DataContract.DataEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case BOOK_ID:
+                //Delete a single row given the ID in the URI
+                selection = DataEntry._ID + "=?";
+                selectionArgs = new String[]{String.valueOf(ContentUris.parseId(uri))};
+                rowsDeleted = database.delete(DataEntry.TABLE_NAME, selection, selectionArgs);
+            default:
+                throw new IllegalArgumentException("Deletion is not supported for " + uri);
+        }
+        // If 1 or more rows were deleted, then notify all listeners that the data at the
+        // given URI has changed
+        if (rowsDeleted != 0) {
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+        // Return the number of rows deleted
+        return rowsDeleted;
     }
 
     /**
      * Returns the MIME type of data for the content URI.
+     *
+     * @link https://classroom.udacity.com/nanodegrees/nd803/parts/0b4a1e27-4535-464f-bf74-4908a6a17897/modules/5250e120-df7d-43eb-b4a8-beff2fe1e2f7/lessons/d3e97af7-7e35-40c2-8016-7dab121a3e39/concepts/c77228ff-2cf1-41da-b12d-c15e95b9dbf7
+     * @link https://stackoverflow.com/questions/7157129/what-is-the-mimetype-attribute-in-data-used-for
      */
     @Override
     public String getType(@NonNull Uri uri) {
-        return null;
+        final int match = uriMatcher.match(uri);
+        switch (match) {
+            case BOOKS:
+                return DataEntry.CONTENT_LIST_TYPE;
+            case BOOK_ID:
+                return DataEntry.CONTENT_ITEM_TYPE;
+            default:
+                throw new IllegalStateException("Unknown URI " + uri + " with match " + match);
+        }
     }
 }
+
 

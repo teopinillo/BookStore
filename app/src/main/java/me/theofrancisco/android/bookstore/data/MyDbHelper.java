@@ -34,7 +34,7 @@ public class MyDbHelper extends SQLiteOpenHelper {
     /**
      * Database version. If you change the database schema, you must increment the database version.
      */
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     /**
      * Constructs a new instance of {@link MyDbHelper}.
@@ -54,10 +54,10 @@ public class MyDbHelper extends SQLiteOpenHelper {
         String SQL_CREATE_ITEM_TABLE = "CREATE TABLE " + DataContract.DataEntry.TABLE_NAME + " ("
                 + DataContract.DataEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + DataContract.DataEntry.COLUMN_DATA_NAME + " TEXT NOT NULL, "
-                + DataContract.DataEntry.COLUMN_DATA_SUPPLIER + " INTEGER NOT NULL DEFAULT 0, "
-                + DataContract.DataEntry.COLUMN_DATA_QUANTITY + " REAL NOT NULL DEFAULT 0, "
+                + DataContract.DataEntry.COLUMN_DATA_QUANTITY + " INTEGER NOT NULL DEFAULT 0, "
                 + DataContract.DataEntry.COLUMN_DATA_PRICE + " REAL NOT NULL DEFAULT 0, "
-                + DataContract.DataEntry.COLUMN_DATA_SUPPLIER_PH + " REAL NOT NULL DEFAULT 0 )";
+                + DataContract.DataEntry.COLUMN_DATA_SUPPLIER + " TEXT NOT NULL,"
+                + DataContract.DataEntry.COLUMN_DATA_SUPPLIER_PH + " TEXT NOT NULL )";
 
         // Execute the SQL statement
         db.execSQL(SQL_CREATE_ITEM_TABLE);

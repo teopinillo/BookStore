@@ -44,5 +44,14 @@
     <string name="editor_insert_pet_successful">Insert Successfully</string>
     <string name="failed_to_insert_row">Failed to insert row for:</string>
     <string name="uri_is_null">uri is null</string>
+    <!-- Title text for the empty view, which describes the empty dog house image [CHAR LIMIT=50] -->
+    <string name="empty_view_title_text">The Bookstore Catalog is Empty…</string>
+    <!-- Subtitle text for the empty view that prompts the user to add a pet [CHAR LIMIT=50] -->
+    <string name="empty_view_subtitle_text">Get started by adding a book</string>
+    <string name="error_null_cursor">Error retrieving data to show. Cursor is null</string>
+    <string name="editor_activity_title_edit_item">Edit Book</string>
+    <string name="editor_update_item_failed">Update Item Failed!</string>
+    <string name="editor_update_item_successful">Item updated Succesfuly.</string>
+
 
 </resources>

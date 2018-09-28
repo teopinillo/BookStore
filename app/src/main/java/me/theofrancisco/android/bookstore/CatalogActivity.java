@@ -1,7 +1,11 @@
 package me.theofrancisco.android.bookstore;
 
+import android.app.LoaderManager;
+import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,19 +14,26 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
+import android.widget.AdapterView;
+import android.widget.ListView;
 
 import me.theofrancisco.android.bookstore.data.DataContract.DataEntry;
 
 /**
  * Displays list of pets that were entered and stored in the app.
  */
-public class CatalogActivity extends AppCompatActivity {
+public class CatalogActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+
+    private Cursor cursor;
+    //Constant that will identified my loader. Could be any value.
+    private static final int DATA_LOADER = 1900;
+    private DataCursorAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_catalog);
+
 
         // Setup FAB to open EditorActivity (FloatingActionButton)
         FloatingActionButton fab = findViewById(R.id.fab);
@@ -33,82 +44,49 @@ public class CatalogActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        //Find the ListView which will populated with the data
+        ListView listView = (ListView) findViewById(R.id.list);
+
+        //Find and ser empty view on the ListView, so that it only shows when the
+        //list has 0 items.
+        View emptyView = findViewById(R.id.empty_view);
+        listView.setEmptyView(emptyView);
+
+        //Setup an Adapter to create a list for each row of pet data in the cursor
+        //There is no data yet (until the loader finished) so pass in null for the cursor
+        adapter = new DataCursorAdapter(this, null);
+        listView.setAdapter(adapter);
+
+        //Setup item click listener
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            //Create a new intent to go to {@link EditorActivity}
+                Intent intent = new Intent(CatalogActivity.this,EditorActivity.class);
+
+                //From the content URI that represents the specific item that was clicked on,
+                //by appending the "id" (passed as input to this method) onto the
+                //{@link DataEntry#CONTENT_URI}.
+                //For example, the URI would be:
+                //"content://me.theofrancisco.android.books/books/2"
+                //if the item with ID 2 was clicked on
+                Uri currentItemUri = ContentUris.withAppendedId(DataEntry.CONTENT_URI, id);
+
+                //set the URI on the data field of the intent
+                intent.setData(currentItemUri);
+
+                //Launch the {@link EditorActivity} to display the data for the current item
+                startActivity(intent);
+            }
+        });
+        //Kick off the loader
+        getLoaderManager().initLoader(DATA_LOADER, null, this);
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        displayDatabaseInfo();
-    }
-
-    /**
-     * Temporary helper method to display information in the onscreen TextView about the state of
-     * the pets database.
-     */
-    private void displayDatabaseInfo() {
-        String state = "";
-        TextView displayView = findViewById(R.id.text_view_pet);
-        StringBuilder records = new StringBuilder();
-        //Projection
-        String[] projection = {
-                DataEntry._ID,
-                DataEntry.COLUMN_DATA_NAME,
-                DataEntry.COLUMN_DATA_PRICE,
-                DataEntry.COLUMN_DATA_QUANTITY,
-                DataEntry.COLUMN_DATA_SUPPLIER,
-                DataEntry.COLUMN_DATA_SUPPLIER_PH};
-
-        try (Cursor cursor = getContentResolver().query(DataEntry.CONTENT_URI,
-                projection,
-                null,
-                null,
-                null)) {
-
-            if (cursor == null) {
-                displayView.setText("Error: cursor is null for : " + DataEntry.CONTENT_URI);
-                return;
-            }
-
-            // Figure out the index of each column
-            //int idColumnIndex = cursor.getColumnIndex(DataEntry._ID);
-            state = "/n1: " + DataEntry.COLUMN_DATA_NAME + " /n";
-            int nameColumnIndex = cursor.getColumnIndex(DataEntry.COLUMN_DATA_NAME);
-            state = "/n2/n";
-            int priceColumnIndex = cursor.getColumnIndex(DataEntry.COLUMN_DATA_PRICE);
-            int quantityColumnIndex = cursor.getColumnIndex(DataEntry.COLUMN_DATA_QUANTITY);
-            int supplierColumnIndex = cursor.getColumnIndex(DataEntry.COLUMN_DATA_SUPPLIER);
-            int supplier_phColumnIndex = cursor.getColumnIndex(DataEntry.COLUMN_DATA_SUPPLIER_PH);
-
-            records.append("items count: ").append(cursor.getCount()).append("\n");
-            records.append("id Item Description Unit \tQuantity \tbuy \tsell\n\n");
-            if (cursor.getCount() > 0) {
-                cursor.moveToFirst();
-                for (int i = 0; i < cursor.getCount(); i++) {
-                    //int id = cursor.getInt(idColumnIndex);
-                    String name = cursor.getString(nameColumnIndex);
-                    float price = cursor.getInt(priceColumnIndex);
-                    float quantity = cursor.getFloat(quantityColumnIndex);
-                    String supplier = cursor.getString(supplierColumnIndex);
-                    String supplier_ph = cursor.getString(supplier_phColumnIndex);
-
-                    records.append(name).append(" _ ");
-                    records.append(price).append(" _ ");
-                    records.append(quantity).append(" _ ");
-                    records.append(supplier).append(" _ ");
-                    records.append(supplier_ph).append("\n");
-                    cursor.moveToNext();
-                }
-            } else {
-                records.append("no records found!");
-            }
-        } catch (Exception e) {
-            records.append("Error: " + state).append(e.getMessage());
-        }
-        // Display the number of rows in the Cursor (which reflects the number of rows in the
-        // pets table in the database).
-
-        //displayView.setText("Number of rows in pets database table: " + c.getCount());
-        displayView.setText(records.toString());
     }
 
     /**
@@ -150,7 +128,6 @@ public class CatalogActivity extends AppCompatActivity {
             // Respond to a click on the "Insert dummy data" menu option
             case R.id.action_insert_dummy_data:
                 insertDummyData();
-                displayDatabaseInfo();
                 return true;
             // Respond to a click on the "Delete all entries" menu option
             case R.id.action_delete_all_entries:
@@ -159,4 +136,39 @@ public class CatalogActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
+
+    //----------LoadManager.LoaderCallbacks<Cursor> methods implementation---------
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        //Projection. specifies the columns from the table we care about
+        String[] projection = {
+                DataEntry._ID,
+                DataEntry.COLUMN_DATA_NAME,
+                DataEntry.COLUMN_DATA_PRICE,
+                DataEntry.COLUMN_DATA_QUANTITY,
+                DataEntry.COLUMN_DATA_SUPPLIER,
+                DataEntry.COLUMN_DATA_SUPPLIER_PH};
+        return new CursorLoader(this,    //Parent activity context
+                DataEntry.CONTENT_URI,          //Provider content URI to query
+                projection,                     //Columns to include in the resulting cursor
+                null,                   //No selection clause
+                null,                //No selection arguments
+                null);                  //Default sort order
+
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        //Update {@link DataCursorAdapter} with this new cursor containing updated data
+        adapter.swapCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        //Callback called when the data needs to be deleted
+        adapter.swapCursor(null);
+    }
+
+    //---------END LoadManager.LoaderCallbacks<Cursor> methods implementation--------
+
 }

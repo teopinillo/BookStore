@@ -1,5 +1,6 @@
 package me.theofrancisco.android.bookstore.data;
 
+import android.content.ContentResolver;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
@@ -14,7 +15,15 @@ public final class DataContract {
      * relationship between a domain name and its website.  A convenient string to use for the
      * content authority is the package name for the app, which is guaranteed to be unique on the
      * device.
-     */
+
+         this value has to be the same as in the manifest for provider
+            /*
+            <provider
+            android:name=".data.MyProvider"
+            android:authorities="me.theofrancisco.android.bookstore"
+            android:exported="false" />
+             */
+
     static final String CONTENT_AUTHORITY = "me.theofrancisco.android.bookstore";
     /*
     URI Example pattern
@@ -58,6 +67,19 @@ public final class DataContract {
         (which contains the scheme and the content authority) to the path segment.
          */
         public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, PATH_BOOKS);
+
+        /**
+         * The MIME type of the {@link #CONTENT_URI} for a list of pets.
+         */
+        static final String CONTENT_LIST_TYPE =
+                ContentResolver.CURSOR_DIR_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_BOOKS;
+
+        /**
+         * The MIME type of the {@link #CONTENT_URI} for a single pet.
+         */
+        static final String CONTENT_ITEM_TYPE =
+                ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_BOOKS;
+
         public final static String COLUMN_DATA_NAME = "name";        //TEXT
         public final static String COLUMN_DATA_QUANTITY = "quantity"; //INTEGER
         public final static String COLUMN_DATA_PRICE = "buy_price"; //REAL
