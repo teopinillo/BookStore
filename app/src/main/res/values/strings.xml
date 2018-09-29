@@ -51,7 +51,11 @@
     <string name="error_null_cursor">Error retrieving data to show. Cursor is null</string>
     <string name="editor_activity_title_edit_item">Edit Book</string>
     <string name="editor_update_item_failed">Update Item Failed!</string>
-    <string name="editor_update_item_successful">Item updated Succesfuly.</string>
+    <string name="editor_update_item_successful">Item updated Successfully.</string>
+    <string name="hint_item_price">Price</string>
+    <string name="unsaved_changes_dialog_msg">Discard your changes and quit editing?</string>
+    <string name="discard">Discard</string>
+    <string name="keep_editing">Keep Editing</string>
 
 
 </resources>

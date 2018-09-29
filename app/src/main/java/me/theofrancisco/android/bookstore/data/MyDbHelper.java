@@ -19,6 +19,8 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import me.theofrancisco.android.bookstore.data.DataContract.DataEntry;
+
 /**
  * Database helper for Pets app. Manages database creation and version management.
  */
@@ -41,7 +43,7 @@ public class MyDbHelper extends SQLiteOpenHelper {
      *
      * @param context of the app
      */
-    public MyDbHelper(Context context) {
+    MyDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
@@ -51,7 +53,7 @@ public class MyDbHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         // Create a String that contains the SQL statement to create the pets table
-        String SQL_CREATE_ITEM_TABLE = "CREATE TABLE " + DataContract.DataEntry.TABLE_NAME + " ("
+        String SQL_CREATE_ITEM_TABLE = "CREATE TABLE " + DataEntry.TABLE_NAME + " ("
                 + DataContract.DataEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + DataContract.DataEntry.COLUMN_DATA_NAME + " TEXT NOT NULL, "
                 + DataContract.DataEntry.COLUMN_DATA_QUANTITY + " INTEGER NOT NULL DEFAULT 0, "

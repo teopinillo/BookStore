@@ -80,11 +80,11 @@ public final class DataContract {
         static final String CONTENT_ITEM_TYPE =
                 ContentResolver.CURSOR_ITEM_BASE_TYPE + "/" + CONTENT_AUTHORITY + "/" + PATH_BOOKS;
 
+        //Name of database table
+        final static String TABLE_NAME = "books";
         public final static String COLUMN_DATA_NAME = "name";        //TEXT
         public final static String COLUMN_DATA_QUANTITY = "quantity"; //INTEGER
         public final static String COLUMN_DATA_PRICE = "buy_price"; //REAL
-        //Name of database table
-        final static String TABLE_NAME = "books";
         public final static String COLUMN_DATA_SUPPLIER = "supplier"; //TEXT
         public final static String COLUMN_DATA_SUPPLIER_PH = "supplier_ph"; //TEXT
     }

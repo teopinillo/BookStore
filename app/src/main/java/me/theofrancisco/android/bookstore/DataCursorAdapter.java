@@ -1,25 +1,22 @@
 package me.theofrancisco.android.bookstore;
 
-import android.support.v4.widget.CursorAdapter;
 import android.content.Context;
 import android.database.Cursor;
+import android.support.v4.widget.CursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-//import android.widget.CursorAdapter;
 import android.widget.TextView;
+
 import me.theofrancisco.android.bookstore.data.DataContract.DataEntry;
 
-/**
- * {@link DataCursorAdapter} is an adapter for a list or grid view
- * that uses a {@link Cursor} of pet data as its data source. This adapter knows
- * how to create list items for each row of pet data in the {@link Cursor}.
- */
+//import android.widget.CursorAdapter;
+
 /**
  Loaders Documentation
- https://developer.android.com/guide/components/loaders
- https://stuff.mit.edu/afs/sipb/project/android/docs/training/load-data-background/setup-loader.html
- https://developer.android.com/guide/topics/ui/layout/listview?utm_source=udacity&utm_medium=course&utm_campaign=android_basics
+ @link https://developer.android.com/guide/components/loaders
+ @link https://stuff.mit.edu/afs/sipb/project/android/docs/training/load-data-background/setup-loader.html
+ @link https://developer.android.com/guide/topics/ui/layout/listview?utm_source=udacity&utm_medium=course&utm_campaign=android_basics
  @link https://drive.google.com/file/d/1kpDWF-hu-rsN6b20wUrqIRGu377iRrJS/view?usp=sharing
  */
 public class DataCursorAdapter extends CursorAdapter {
@@ -30,7 +27,7 @@ public class DataCursorAdapter extends CursorAdapter {
      * @param context The context
      * @param c       The cursor from which to get the data.
      */
-    public DataCursorAdapter(Context context, Cursor c) {
+    DataCursorAdapter(Context context, Cursor c) {
         super(context, c, 0 /* flags */);
     }
     /**

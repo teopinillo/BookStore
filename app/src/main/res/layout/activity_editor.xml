@@ -30,6 +30,7 @@
 
             <!-- Name field -->
             <EditText
+                android:autofillHints="@string/hint_name"
                 android:id="@+id/edit_name"
                 style="@style/EditorFieldStyle"
                 android:hint="@string/hint_name"
@@ -54,10 +55,11 @@
         <EditText
             android:id="@+id/edit_price"
             style="@style/EditorFieldStyle"
+            android:autofillHints="@string/hint_item_price"
             android:layout_width="0dp"
             android:layout_weight="2"
-            android:hint="@string/hint_item_quantity"
-            android:inputType="number" />
+            android:hint="@string/hint_item_price"
+            android:inputType="numberDecimal|number" />
     </LinearLayout>
 
     <!-- Quantity category -->

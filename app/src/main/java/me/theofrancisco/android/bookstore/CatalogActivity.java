@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,7 +25,6 @@ import me.theofrancisco.android.bookstore.data.DataContract.DataEntry;
  */
 public class CatalogActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
-    private Cursor cursor;
     //Constant that will identified my loader. Could be any value.
     private static final int DATA_LOADER = 1900;
     private DataCursorAdapter adapter;
@@ -46,7 +46,7 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
         });
 
         //Find the ListView which will populated with the data
-        ListView listView = (ListView) findViewById(R.id.list);
+        ListView listView = findViewById(R.id.list);
 
         //Find and ser empty view on the ListView, so that it only shows when the
         //list has 0 items.
@@ -62,7 +62,9 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            //Create a new intent to go to {@link EditorActivity}
+                Log.i("MyApp", "[CatalogActivity.onItemClick] started.");
+                Log.i("MyApp", "position id: " + id);
+                //Create a new intent to go to {@link EditorActivity}
                 Intent intent = new Intent(CatalogActivity.this,EditorActivity.class);
 
                 //From the content URI that represents the specific item that was clicked on,
@@ -72,11 +74,11 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
                 //"content://me.theofrancisco.android.books/books/2"
                 //if the item with ID 2 was clicked on
                 Uri currentItemUri = ContentUris.withAppendedId(DataEntry.CONTENT_URI, id);
-
+                Log.i("MyApp", "[CatalogActivity.onItemClick] uri: " + currentItemUri);
                 //set the URI on the data field of the intent
                 intent.setData(currentItemUri);
-
                 //Launch the {@link EditorActivity} to display the data for the current item
+                Log.i("MyApp", "[CatalogActivity.onItemClick] end.");
                 startActivity(intent);
             }
         });
@@ -95,22 +97,22 @@ public class CatalogActivity extends AppCompatActivity implements LoaderManager.
     private void insertDummyData() {
         ContentValues values = new ContentValues();
         values.put(DataEntry.COLUMN_DATA_NAME, "The Engineer's Guide to Fashion");
-        values.put(DataEntry.COLUMN_DATA_PRICE, 10);
-        values.put(DataEntry.COLUMN_DATA_QUANTITY, 2);
+        values.put(DataEntry.COLUMN_DATA_PRICE, 10.40);
+        values.put(DataEntry.COLUMN_DATA_QUANTITY, 11);
         values.put(DataEntry.COLUMN_DATA_SUPPLIER, "Fazlur Rahman Khan");
-        values.put(DataEntry.COLUMN_DATA_SUPPLIER_PH, "(605) 475 6959");
+        values.put(DataEntry.COLUMN_DATA_SUPPLIER_PH, "6054756959");
         // Use the {@link DataEntry#CONTENT_URI} to indicate that we want to insert
         // into the database table.
         // Receive the new content URI that will allow us to access Toto's data in the future.
-        Uri newUri = getContentResolver().insert(DataEntry.CONTENT_URI, values);
+        getContentResolver().insert(DataEntry.CONTENT_URI, values);
 
         values = new ContentValues();
         values.put(DataEntry.COLUMN_DATA_NAME, "Everything Men Know About Women");
-        values.put(DataEntry.COLUMN_DATA_PRICE, 15);
-        values.put(DataEntry.COLUMN_DATA_QUANTITY, 8);
+        values.put(DataEntry.COLUMN_DATA_PRICE, 15.60);
+        values.put(DataEntry.COLUMN_DATA_QUANTITY, 22);
         values.put(DataEntry.COLUMN_DATA_SUPPLIER, "Ricky Martin");
-        values.put(DataEntry.COLUMN_DATA_SUPPLIER_PH, "(951) 262 3062");
-        newUri = getContentResolver().insert(DataEntry.CONTENT_URI, values);
+        values.put(DataEntry.COLUMN_DATA_SUPPLIER_PH, "9512623062");
+        getContentResolver().insert(DataEntry.CONTENT_URI, values);
     }
 
     @Override
