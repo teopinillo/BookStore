@@ -29,6 +29,7 @@ import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -57,11 +58,22 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     private EditText etSupplierPH;
 
     //flag if the user changes any data
-    private boolean editDatatHasChanged;
+    private boolean editDataHasChanged = false;
+
+    //I found a test case where the dialog box was not appearing when the user added details for a new pet but then clicking the back button before saving the details
+    //from {@link https://github.com/udacity/ud845-Pets/commit/bea7d9080f06d447892c634f6271cb83eef9762b
+    private View.OnKeyListener mKeyListener = new View.OnKeyListener() {
+        @Override
+        public boolean onKey(View v, int keyCode, KeyEvent event) {
+            editDataHasChanged = true;
+            return false;
+        }
+    };
+
     private View.OnTouchListener mTouchListener = new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent motionEvent) {
-            editDatatHasChanged = true;
+            editDataHasChanged = true;
             return false;
         }
     };
@@ -70,7 +82,6 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editor);
-        editDatatHasChanged = false;
         Log.i("MyApp","[EditorActivity.onCreate] start");
         //Use getIntent() and getData() to get the associated URI
 
@@ -106,6 +117,12 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
         etQuantity.setOnTouchListener(mTouchListener);
         etSupplier.setOnTouchListener(mTouchListener);
         etSupplierPH.setOnTouchListener(mTouchListener);
+
+        etName.setOnKeyListener(mKeyListener);
+        etPrice.setOnKeyListener(mKeyListener);
+        etQuantity.setOnKeyListener(mKeyListener);
+        etSupplier.setOnKeyListener(mKeyListener);
+        etSupplierPH.setOnKeyListener(mKeyListener);
 
         Log.i("MyApp","[EditorActivity.onCreate] finish");
     }
@@ -159,8 +176,27 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
                 return true;
             // Respond to a click on the "Up" arrow button in the app bar
             case android.R.id.home:
-                // Navigate back to parent activity (CatalogActivity)
-                NavUtils.navigateUpFromSameTask(this);
+                // If the item hasn't changed, continue with navigating up to parent activity
+                // which is the {@link CatalogActivity}.
+                if (!editDataHasChanged) {
+                    NavUtils.navigateUpFromSameTask(EditorActivity.this);
+                    return true;
+                }
+
+                // Otherwise if there are unsaved changes, setup a dialog to warn the user.
+                // Create a click listener to handle the user confirming that
+                // changes should be discarded.
+                DialogInterface.OnClickListener discardButtonClickListener =
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                // User clicked "Discard" button, navigate to parent activity.
+                                NavUtils.navigateUpFromSameTask(EditorActivity.this);
+                            }
+                        };
+
+                // Show a dialog that notifies the user they have unsaved changes
+                showUnsavedChangesDialog(discardButtonClickListener);
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -323,6 +359,9 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     }
 
     //This method will create a dialog if the user exit the activity without saving
+    // OnClickListener for the discard button. We do this because the behavior for clicking
+    // back or up is a little bit different.
+    //This method will create a dialog if the user exit the activity without saving
     private void showUnsavedChangesDialog(
             DialogInterface.OnClickListener discardButtonClickListener) {
         // Create an AlertDialog.Builder and set the message, and click listeners
@@ -344,5 +383,43 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
         AlertDialog alertDialog = builder.create();
         alertDialog.show();
     }
+
+
+    //Hook up the back button
+    //Here is the code for the back button. You need to override the activity's normal
+    // “back button”. If the pet has changed, you make a discarded click listener that closes
+    // the current activity.
+    // Then you pass this listener to the showUnsavedChangesDialog method you just created.
+    @Override
+    public void onBackPressed() {
+        // If the pet hasn't changed, continue with handling back button press
+        if (!editDataHasChanged) {
+            super.onBackPressed();
+            return;
+        }
+
+        // Otherwise if there are unsaved changes, setup a dialog to warn the user.
+        // Create a click listener to handle the user confirming that changes should be discarded.
+        DialogInterface.OnClickListener discardButtonClickListener =
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        // User clicked "Discard" button, close the current activity.
+                        finish();
+                    }
+                };
+
+        // Show dialog that there are unsaved changes
+        showUnsavedChangesDialog(discardButtonClickListener);
+    }
+
+    //Helpful links:
+
+    //To add behavior to when the back button is clicked, see this StackOverflow post.
+    //@link https://stackoverflow.com/questions/18337536/android-overriding-onbackpressed
+    //To add behavior when the “Up” button is clicked, see this article.
+    //@link https://developer.android.com/training/implementing-navigation/ancestral?utm_source=udacity&utm_medium=course&utm_campaign=android_basics#NavigateUp
+    // You’ll need to add code to the case when the android.R.id.home button is clicked.
+    //@link https://developer.android.com/guide/topics/ui/dialogs?utm_source=udacity&utm_medium=course&utm_campaign=android_basics#AlertDialog
 
 }
