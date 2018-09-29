@@ -42,7 +42,6 @@ import me.theofrancisco.android.bookstore.data.DataContract.DataEntry;
 import static me.theofrancisco.android.bookstore.data.MyDbHelper.LOG_TAG;
 
 
-
 public class EditorActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     //Content URI for the existing pet (null if it's a new pet)
@@ -82,7 +81,7 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_editor);
-        Log.i("MyApp","[EditorActivity.onCreate] start");
+        Log.i("MyApp", "[EditorActivity.onCreate] start");
         //Use getIntent() and getData() to get the associated URI
 
         //Set the title of EditorActivity on with situation we have
@@ -124,8 +123,28 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
         etSupplier.setOnKeyListener(mKeyListener);
         etSupplierPH.setOnKeyListener(mKeyListener);
 
-        Log.i("MyApp","[EditorActivity.onCreate] finish");
+        //See comments on the method onSaveInstanceState
+        if (savedInstanceState != null) {
+            editDataHasChanged = savedInstanceState.getBoolean("editDataHasChanged");
+        }
+
+        Log.i("MyApp", "[EditorActivity.onCreate] finish");
     }
+
+    //
+    //What if User Touch any Edit Field, so 'OnTouchListener' get Triggered and 'mPetHasChanged'
+    //value will change to 'true' and then if user Rotate the screen, so Editor activity will
+    // again created with Default value of 'mPetHasChanged' value to 'false', so it's not good.
+    //SOLUTION:
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("editDataHasChanged", editDataHasChanged);
+    }
+    //in onCreate:
+    //  if(savedInstanceState != null){
+    //               mPetHasChanged = savedInstanceState.getBoolean("mPetHasChanged");
+    //
 
     private void saveItem(ContentValues values) {
         Uri uri = null;
@@ -240,7 +259,7 @@ public class EditorActivity extends AppCompatActivity implements LoaderManager.L
         values.put(DataEntry.COLUMN_DATA_SUPPLIER, supplier);
         values.put(DataEntry.COLUMN_DATA_SUPPLIER_PH, supplierPH);
 
-        if (currentItemUri==null){
+        if (currentItemUri == null) {
             saveItem(values);     //new pet
         }
         // Otherwise this is an EXISTING item, so update the pet with content URI: currentItemUri
